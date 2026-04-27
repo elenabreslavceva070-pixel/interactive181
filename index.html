@@ -32,14 +32,16 @@
 
         .stacks {
             display: flex;
-            flex-wrap: wrap;
+            flex-direction: row;
             gap: 1.8rem;
             margin-bottom: 2rem;
+            flex-wrap: nowrap; /* запрещаем перенос */
         }
 
         .stack {
             flex: 1;
-            min-width: 280px;
+            min-width: 0; /* позволяем сжиматься */
+            width: 50%;
             background: #FEFEFE;
             border-radius: 1.8rem;
             box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03), 0 0 0 1px rgba(149, 202, 250, 0.3);
@@ -218,6 +220,16 @@
             }
             .stack-title h2 {
                 font-size: 1.2rem;
+            }
+            /* на очень узких экранах разрешаем перенос, но только при ширине менее 700px */
+            @media (max-width: 700px) {
+                .stacks {
+                    flex-wrap: wrap;
+                }
+                .stack {
+                    min-width: 280px;
+                    width: auto;
+                }
             }
         }
     </style>
@@ -562,7 +574,7 @@
         assignedCards = [];
         isCheckMode = false;
         
-        actionBtn.innerText = '✅ Проверить';
+        actionBtn.innerText = 'Проверить';
         actionBtn.classList.remove('reset-btn');
         
         renderStacks();
