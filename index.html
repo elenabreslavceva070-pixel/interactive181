@@ -77,7 +77,6 @@
             border-radius: 1rem;
         }
 
-        /* карточки внутри стопок - тоже перетаскиваемые */
         .stack-card {
             background: white;
             border: 2px solid #95CAFA;
@@ -111,7 +110,6 @@
             background-color: #fff6f5;
         }
 
-        /* область с активной карточкой (источник новых карточек) */
         .source-area {
             background: #FFFFFF;
             border-radius: 1rem;
@@ -213,7 +211,6 @@
             text-align: center;
         }
 
-        /* Очень компактный режим для маленьких фреймов */
         @media (max-width: 600px) {
             .trainer {
                 padding: 0.6rem;
@@ -265,7 +262,7 @@
 </div>
 
 <script>
-    // Данные карточек (удалена карточка про единовременную сумму за долгосрочный договор)
+    // Данные карточек
     const situationsData = [
         { id: 0, text: "Вы заплатили сети ритейлеров за то, чтобы они провели рекламную кампанию вашего товара: выпуск в каталоге, размещение на баннере и в специальном разделе сайта.", correctType: "purchase" },
         { id: 1, text: "Ритейлер, покупая товар у вас, берет на себя организацию бесплатной доставки до конечного клиента. Вы компенсируете ему расходы на доставку, и он вам предоставляет все документы на закрытие услуги.", correctType: "purchase" },
@@ -275,8 +272,8 @@
         { id: 5, text: "Вы выплатили покупателю денежное вознаграждение за то, что он разрешил размещать рекламу продукта компании в его магазине, но при этом не контролирует размещение, время и формат рекламы.", correctType: "reduction" }
     ];
 
-    let cardsQueue = [];           // { id, text, correctType }
-    let assignedCards = [];        // { id, text, userType, correctType }
+    let cardsQueue = [];
+    let assignedCards = [];
     let currentCard = null;
     let isCheckMode = false;
     
@@ -286,10 +283,19 @@
     const actionBtn = document.getElementById('actionBtn');
     const messageArea = document.getElementById('messageArea');
     
-    let draggedCardData = null;    // { id, sourceType, sourceContainer, element, fromQueue }
+    let draggedCardData = null;
     let draggedElement = null;
+
+    // Функция для перемешивания массива (алгоритм Фишера-Йетса)
+    function shuffleArray(array) {
+        const shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+    }
     
-    // Рендер стопок (сделаем карточки перетаскиваемыми)
     function renderStacks() {
         purchaseContainer.innerHTML = '';
         reductionContainer.innerHTML = '';
@@ -314,7 +320,6 @@
                 }
             }
             
-            // Добавляем drag обработчики для карточек в колонках
             cardDiv.addEventListener('dragstart', handleCardDragStart);
             cardDiv.addEventListener('dragend', handleDragEnd);
             cardDiv.addEventListener('dragenter', (e) => e.preventDefault());
@@ -331,7 +336,6 @@
         });
     }
     
-    // Рендер текущей карточки из очереди (источник)
     function renderCurrentCard() {
         activeCardContainer.innerHTML = '';
         
@@ -364,7 +368,6 @@
         }
     }
     
-    // Drag start для карточки из очереди (новая)
     function handleQueueDragStart(e) {
         if (isCheckMode) {
             e.preventDefault();
@@ -385,7 +388,6 @@
         this.classList.add('dragging');
     }
     
-    // Drag start для карточки из колонки
     function handleCardDragStart(e) {
         if (isCheckMode) {
             e.preventDefault();
@@ -394,9 +396,8 @@
         }
         
         const cardId = parseInt(this.getAttribute('data-id'));
-        const currentType = this.getAttribute('data-type'); // 'purchase' или 'reduction'
+        const currentType = this.getAttribute('data-type');
         
-        // Находим карточку в assignedCards
         const cardData = assignedCards.find(c => c.id === cardId);
         if (!cardData) return false;
         
@@ -424,7 +425,6 @@
         });
     }
     
-    // Настройка зон для drop
     function setupDropZones() {
         const containers = [purchaseContainer, reductionContainer];
         containers.forEach(container => {
@@ -440,7 +440,6 @@
         });
     }
     
-    // Обработка drop на колонку
     function handleDropOnColumn(e) {
         e.preventDefault();
         const targetContainer = e.currentTarget;
@@ -453,7 +452,6 @@
         
         if (!draggedCardData) return;
         
-        // Определяем целевой тип колонки
         let targetType = null;
         if (targetContainer.id === 'purchaseContainer') {
             targetType = 'purchase';
@@ -465,11 +463,9 @@
         
         const draggedId = draggedCardData.id;
         
-        // СЛУЧАЙ 1: Карточка из очереди (новая)
         if (draggedCardData.fromQueue) {
             if (!currentCard || currentCard.id !== draggedId) return;
             
-            // Сохраняем распределённую карточку
             assignedCards.push({
                 id: currentCard.id,
                 text: currentCard.text,
@@ -477,7 +473,6 @@
                 correctType: currentCard.correctType
             });
             
-            // Загружаем следующую карточку
             if (cardsQueue.length > 0) {
                 currentCard = cardsQueue.shift();
                 messageArea.innerText = `Перетащите новую карточку (осталось: ${cardsQueue.length + 1})`;
@@ -493,10 +488,8 @@
             return;
         }
         
-        // СЛУЧАЙ 2: Карточка из колонки (перемещение между колонками)
         const sourceType = draggedCardData.sourceType;
         
-        // Если перетаскиваем в ту же колонку — игнорируем (или можно изменить порядок, но по ТЗ достаточно перемещения между колонками)
         if (sourceType === targetType) {
             messageArea.innerText = 'Карточка уже в этой колонке';
             draggedCardData = null;
@@ -504,16 +497,12 @@
             return;
         }
         
-        // Находим карточку в assignedCards
         const cardIndex = assignedCards.findIndex(c => c.id === draggedId);
         if (cardIndex === -1) return;
         
         const movedCard = assignedCards[cardIndex];
-        
-        // Обновляем тип
         movedCard.userType = targetType;
         
-        // Перерисовываем
         renderStacks();
         renderCurrentCard();
         
@@ -523,7 +512,6 @@
         draggedElement = null;
     }
     
-    // Функция проверки
     function checkAnswers() {
         if (currentCard !== null) {
             messageArea.innerText = `Сначала распределите текущую карточку! Осталось: ${cardsQueue.length + 1}`;
@@ -555,9 +543,11 @@
         }
     }
     
-    // Полный сброс
     function resetGame() {
-        cardsQueue = situationsData.map(card => ({
+        // Перемешиваем карточки перед стартом
+        const shuffledData = shuffleArray(situationsData);
+        
+        cardsQueue = shuffledData.map(card => ({
             id: card.id,
             text: card.text,
             correctType: card.correctType
